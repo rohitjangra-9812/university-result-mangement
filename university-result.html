@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apex University — Result Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Mono:wght@300;400;500&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0d0d0d;
+    --cream: #f5f0e8;
+    --gold: #c9993a;
+    --gold-light: #e8c97a;
+    --rust: #8b3a2a;
+    --sage: #3a5a4a;
+    --muted: #7a7060;
+    --border: #d4c9b0;
+    --pass: #2d6a4f;
+    --fail: #8b1a1a;
+    --card-bg: #faf7f2;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--cream);
+    color: var(--ink);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 39px, var(--border) 39px, var(--border) 40px),
+      repeating-linear-gradient(90deg, transparent, transparent 39px, var(--border) 39px, var(--border) 40px);
+    opacity: 0.18;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* HEADER */
+  header {
+    position: relative;
+    z-index: 10;
+    border-bottom: 3px double var(--border);
+    background: var(--ink);
+    color: var(--cream);
+    padding: 0 2rem;
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.2rem 0 0.8rem;
+    border-bottom: 1px solid #333;
+  }
+
+  .seal {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 2px solid var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    color: var(--gold);
+    flex-shrink: 0;
+  }
+
+  .header-center { text-align: center; flex: 1; }
+
+  .uni-name {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.4rem, 3vw, 2.2rem);
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    color: var(--gold-light);
+  }
+
+  .uni-subtitle {
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 0.2rem;
+  }
+
+  .header-meta {
+    display: flex;
+    gap: 2rem;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-transform: uppercase;
+    align-items: center;
+  }
+
+  .header-nav {
+    display: flex;
+    gap: 2rem;
+    padding: 0.6rem 0;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    justify-content: center;
+  }
+
+  .header-nav span { cursor: pointer; transition: color 0.2s; }
+  .header-nav span:hover, .header-nav span.active { color: var(--gold); }
+
+  /* MAIN */
+  main {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 4rem;
+  }
+
+  /* SEARCH SECTION */
+  .search-section {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-top: 4px solid var(--gold);
+    padding: 2rem 2.5rem;
+    margin-bottom: 2.5rem;
+    position: relative;
+    animation: fadeSlideIn 0.5s ease both;
+  }
+
+  .search-section::after {
+    content: '◆ RESULT INQUIRY ◆';
+    position: absolute;
+    top: -0.6rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--card-bg);
+    padding: 0 1rem;
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+    color: var(--gold);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .search-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr auto;
+    gap: 1rem;
+    align-items: end;
+  }
+
+  .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+
+  label {
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  input, select {
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-bottom: 2px solid var(--ink);
+    padding: 0.7rem 0.9rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+    appearance: none;
+  }
+
+  input:focus, select:focus {
+    border-color: var(--gold);
+    background: #fff;
+  }
+
+  input::placeholder { color: var(--border); }
+
+  .btn-search {
+    background: var(--ink);
+    color: var(--gold);
+    border: none;
+    padding: 0.75rem 1.8rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn-search:hover { background: var(--gold); color: var(--ink); }
+
+  /* RESULT AREA */
+  .result-area { animation: fadeSlideIn 0.5s ease 0.1s both; }
+
+  /* RESULT HEADER */
+  .result-header {
+    background: var(--ink);
+    color: var(--cream);
+    padding: 1.8rem 2.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 3px solid var(--gold);
+  }
+
+  .student-info h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--gold-light);
+    margin-bottom: 0.4rem;
+  }
+
+  .student-meta {
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: 0.2rem 1.5rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    color: #aaa;
+    text-transform: uppercase;
+  }
+
+  .student-meta b { color: var(--cream); font-weight: 400; }
+
+  .result-badge {
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .result-badge .grade-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 3px solid var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    margin: 0 auto 0.5rem;
+  }
+
+  .grade-letter {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--gold);
+    line-height: 1;
+  }
+
+  .grade-label { font-size: 0.5rem; letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase; }
+
+  .overall-status {
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 0.3rem 0.8rem;
+    border: 1px solid;
+  }
+
+  .status-pass { color: #5fda9a; border-color: #5fda9a; }
+  .status-fail { color: #e07070; border-color: #e07070; }
+
+  /* STATS ROW */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border: 1px solid var(--border);
+    border-top: none;
+    background: var(--card-bg);
+    margin-bottom: 1.5rem;
+  }
+
+  .stat-box {
+    padding: 1.2rem 1.5rem;
+    text-align: center;
+    border-right: 1px solid var(--border);
+  }
+
+  .stat-box:last-child { border-right: none; }
+
+  .stat-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1;
+    margin-bottom: 0.3rem;
+  }
+
+  .stat-value.gold { color: var(--gold); }
+
+  .stat-name {
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* SUBJECT TABLE */
+  .table-section {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+  }
+
+  .table-title {
+    background: var(--ink);
+    color: var(--gold);
+    padding: 0.6rem 1.5rem;
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    font-family: 'DM Mono', monospace;
+  }
+
+  table { width: 100%; border-collapse: collapse; }
+
+  thead tr {
+    background: #f0ebe0;
+    border-bottom: 2px solid var(--border);
+  }
+
+  th {
+    padding: 0.8rem 1.2rem;
+    font-size: 0.58rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: left;
+    font-weight: 500;
+  }
+
+  th:last-child, td:last-child { text-align: center; }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #f0ebe0; }
+
+  td {
+    padding: 0.9rem 1.2rem;
+    font-size: 0.8rem;
+    color: var(--ink);
+  }
+
+  .subject-code { color: var(--muted); font-size: 0.7rem; }
+  .subject-name { font-family: 'Libre Baskerville', serif; font-size: 0.85rem; }
+
+  .mark-bar-wrap { display: flex; align-items: center; gap: 0.8rem; }
+
+  .mark-bar {
+    flex: 1;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .mark-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  .grade-pill {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    font-weight: 500;
+    border: 1px solid;
+    text-transform: uppercase;
+  }
+
+  .g-o  { color: #166534; border-color: #166534; background: #dcfce7; }
+  .g-a  { color: #1e40af; border-color: #1e40af; background: #dbeafe; }
+  .g-b  { color: #92400e; border-color: #92400e; background: #fef3c7; }
+  .g-c  { color: #5b21b6; border-color: #5b21b6; background: #ede9fe; }
+  .g-f  { color: #991b1b; border-color: #991b1b; background: #fee2e2; }
+
+  .pass-tag { color: var(--pass); font-size: 0.65rem; letter-spacing: 0.1em; }
+  .fail-tag { color: var(--fail); font-size: 0.65rem; letter-spacing: 0.1em; }
+
+  /* CHART */
+  .charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .chart-box {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .chart-title {
+    background: var(--ink);
+    color: var(--gold);
+    padding: 0.6rem 1.5rem;
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+  }
+
+  .bar-chart {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .bar-row { display: flex; align-items: center; gap: 0.8rem; }
+
+  .bar-label {
+    width: 120px;
+    font-size: 0.65rem;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 0;
+  }
+
+  .h-bar {
+    flex: 1;
+    height: 22px;
+    background: #e8e0d4;
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .h-bar-fill {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding-left: 0.5rem;
+    font-size: 0.6rem;
+    font-weight: 500;
+    color: var(--cream);
+    border-radius: 2px;
+    transition: width 1s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  /* Radar chart placeholder */
+  .radar-wrap {
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  canvas { display: block; }
+
+  /* FOOTER NOTE */
+  .result-footer {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    padding: 1rem 1.5rem;
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .result-footer em { font-style: italic; font-family: 'Libre Baskerville', serif; }
+
+  .btn-print {
+    background: transparent;
+    border: 1px solid var(--ink);
+    color: var(--ink);
+    padding: 0.4rem 1rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-print:hover { background: var(--ink); color: var(--gold); }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-top: 4px solid var(--border);
+  }
+
+  .empty-state .big-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: var(--border);
+  }
+
+  .empty-state h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+  }
+
+  .empty-state p { font-size: 0.75rem; color: var(--border); letter-spacing: 0.1em; }
+
+  /* ANIMATIONS */
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes barGrow {
+    from { width: 0 !important; }
+  }
+
+  .animate-bar { animation: barGrow 1s cubic-bezier(0.4,0,0.2,1) both; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .search-grid { grid-template-columns: 1fr 1fr; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .charts-row { grid-template-columns: 1fr; }
+    .header-meta { display: none; }
+    .result-header { flex-direction: column; gap: 1rem; }
+  }
+
+  @media (max-width: 500px) {
+    .search-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="seal">⚜</div>
+    <div class="header-center">
+      <div class="uni-name">APEX UNIVERSITY</div>
+      <div class="uni-subtitle">Examination & Evaluation Division — Student Result Portal</div>
+    </div>
+    <div class="header-meta">
+      <div>Session<br><b style="color:var(--cream)">2023–24</b></div>
+      <div>Semester<br><b style="color:var(--cream)">Even</b></div>
+      <div>Exam Date<br><b style="color:var(--cream)">Mar 2024</b></div>
+    </div>
+  </div>
+  <div class="header-nav">
+    <span class="active">Result Portal</span>
+    <span>Marksheet</span>
+    <span>Transcript</span>
+    <span>Revaluation</span>
+    <span>Notices</span>
+    <span>Contact</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- SEARCH -->
+  <div class="search-section">
+    <div class="search-grid">
+      <div class="form-group">
+        <label>Enrollment / Roll No.</label>
+        <input type="text" id="rollInput" placeholder="e.g. 2021CS0042" value="2021CS0042">
+      </div>
+      <div class="form-group">
+        <label>Programme</label>
+        <select id="programmeSelect">
+          <option value="btech">B.Tech</option>
+          <option value="bca">BCA</option>
+          <option value="mtech">M.Tech</option>
+          <option value="mba">MBA</option>
+          <option value="bsc">B.Sc.</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Semester</label>
+        <select id="semesterSelect">
+          <option value="4" selected>4th Semester</option>
+          <option value="1">1st Semester</option>
+          <option value="2">2nd Semester</option>
+          <option value="3">3rd Semester</option>
+          <option value="5">5th Semester</option>
+          <option value="6">6th Semester</option>
+        </select>
+      </div>
+      <button class="btn-search" onclick="fetchResult()">→ Fetch Result</button>
+    </div>
+  </div>
+
+  <!-- RESULT DISPLAY -->
+  <div class="result-area" id="resultArea">
+    <!-- Empty state -->
+    <div class="empty-state" id="emptyState">
+      <div class="big-icon">🎓</div>
+      <h3>Enter Enrollment Number to View Result</h3>
+      <p>Use the form above · B.Tech · BCA · M.Tech · MBA · B.Sc.</p>
+    </div>
+
+    <!-- Result content (hidden initially) -->
+    <div id="resultContent" style="display:none">
+
+      <div class="result-header">
+        <div class="student-info">
+          <h2 id="studentName">—</h2>
+          <div class="student-meta">
+            <span>Enrollment</span><span><b id="studentEnroll">—</b></span>
+            <span>Branch</span><span><b id="studentBranch">—</b></span>
+            <span>Year / Sem</span><span><b id="studentSem">—</b></span>
+            <span>Exam Type</span><span><b>Regular</b></span>
+            <span>Declared On</span><span><b id="declaredOn">—</b></span>
+          </div>
+        </div>
+        <div class="result-badge">
+          <div class="grade-circle">
+            <div class="grade-letter" id="overallGrade">—</div>
+          </div>
+          <div class="grade-label">Overall Grade</div>
+          <br>
+          <div class="overall-status status-pass" id="overallStatus">PASS</div>
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div class="stats-row">
+        <div class="stat-box">
+          <div class="stat-value gold" id="statSGPA">—</div>
+          <div class="stat-name">SGPA</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value" id="statCGPA">—</div>
+          <div class="stat-name">Cumulative GPA</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value" id="statPercent">—</div>
+          <div class="stat-name">Percentage</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value" id="statRank">—</div>
+          <div class="stat-name">Class Rank</div>
+        </div>
+      </div>
+
+      <!-- TABLE -->
+      <div class="table-section">
+        <div class="table-title">◆ Subject-wise Marks &amp; Grades</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Subject</th>
+              <th>Credits</th>
+              <th>Internal (30)</th>
+              <th>External (70)</th>
+              <th>Total (100)</th>
+              <th>Grade</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="subjectTableBody"></tbody>
+        </table>
+      </div>
+
+      <!-- CHARTS -->
+      <div class="charts-row">
+        <div class="chart-box">
+          <div class="chart-title">◆ Subject-wise Performance</div>
+          <div class="bar-chart" id="barChartArea"></div>
+        </div>
+        <div class="chart-box">
+          <div class="chart-title">◆ Score Distribution</div>
+          <div class="radar-wrap">
+            <canvas id="donutCanvas" width="260" height="260"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- FOOTER NOTE -->
+      <div class="result-footer">
+        <div><em>Note:</em> This is a provisional result. Official marksheet will be issued by the Examination Section. For queries, contact exam@apexuniversity.ac.in</div>
+        <button class="btn-print" onclick="window.print()">⎙ Print / Save PDF</button>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+
+<script>
+  // Mock data
+  const STUDENTS = {
+    "2021CS0042": {
+      name: "Rahul Kumar Sharma",
+      branch: "Computer Science & Engineering",
+      year: "3rd Year",
+      sem: "4th Semester",
+      sgpa: "8.74",
+      cgpa: "8.51",
+      percent: "81.4%",
+      rank: "7 / 128",
+      grade: "A+",
+      status: "PASS",
+      declared: "25 May 2024",
+      subjects: [
+        { code: "CS401", name: "Design & Analysis of Algorithms", credits: 4, internal: 27, external: 62, grade: "A+", gradeClass: "g-a" },
+        { code: "CS402", name: "Database Management Systems", credits: 4, internal: 25, external: 58, grade: "A",  gradeClass: "g-a" },
+        { code: "CS403", name: "Operating Systems", credits: 3, internal: 28, external: 64, grade: "O",  gradeClass: "g-o" },
+        { code: "CS404", name: "Computer Networks", credits: 3, internal: 22, external: 55, grade: "B+", gradeClass: "g-b" },
+        { code: "CS405", name: "Software Engineering", credits: 3, internal: 26, external: 60, grade: "A",  gradeClass: "g-a" },
+        { code: "CS406", name: "Web Technologies Lab", credits: 2, internal: 29, external: 66, grade: "O",  gradeClass: "g-o" },
+      ]
+    },
+    "2021CS0099": {
+      name: "Priya Singh",
+      branch: "Computer Science & Engineering",
+      year: "3rd Year",
+      sem: "4th Semester",
+      sgpa: "7.20",
+      cgpa: "7.05",
+      percent: "67.2%",
+      rank: "34 / 128",
+      grade: "B+",
+      status: "PASS",
+      declared: "25 May 2024",
+      subjects: [
+        { code: "CS401", name: "Design & Analysis of Algorithms", credits: 4, internal: 20, external: 42, grade: "B",  gradeClass: "g-b" },
+        { code: "CS402", name: "Database Management Systems", credits: 4, internal: 22, external: 48, grade: "B+", gradeClass: "g-b" },
+        { code: "CS403", name: "Operating Systems", credits: 3, internal: 18, external: 38, grade: "C+", gradeClass: "g-c" },
+        { code: "CS404", name: "Computer Networks", credits: 3, internal: 24, external: 55, grade: "A",  gradeClass: "g-a" },
+        { code: "CS405", name: "Software Engineering", credits: 3, internal: 21, external: 45, grade: "B",  gradeClass: "g-b" },
+        { code: "CS406", name: "Web Technologies Lab", credits: 2, internal: 26, external: 58, grade: "A",  gradeClass: "g-a" },
+      ]
+    }
+  };
+
+  const DEFAULT = STUDENTS["2021CS0042"];
+
+  function getBarColor(pct) {
+    if (pct >= 75) return "#2d6a4f";
+    if (pct >= 60) return "#92400e";
+    if (pct >= 45) return "#1e40af";
+    return "#8b1a1a";
+  }
+
+  function fetchResult() {
+    const roll = document.getElementById("rollInput").value.trim().toUpperCase();
+    const data = STUDENTS[roll] || (roll ? generateMockResult(roll) : null);
+    if (!data) { alert("No result found. Try: 2021CS0042 or 2021CS0099"); return; }
+    showResult(data);
+  }
+
+  function generateMockResult(roll) {
+    return {
+      name: "Student ( " + roll + " )",
+      branch: "B.Tech — Computer Science",
+      year: "3rd Year",
+      sem: "4th Semester",
+      sgpa: (6 + Math.random() * 3).toFixed(2),
+      cgpa: (5.8 + Math.random() * 3).toFixed(2),
+      percent: (55 + Math.random() * 35).toFixed(1) + "%",
+      rank: Math.floor(Math.random() * 120 + 1) + " / 128",
+      grade: "B+",
+      status: "PASS",
+      declared: "25 May 2024",
+      subjects: [
+        { code: "CS401", name: "Design & Analysis of Algorithms", credits: 4, internal: rnd(18,29), external: rnd(40,68), grade: "B+", gradeClass: "g-b" },
+        { code: "CS402", name: "Database Management Systems", credits: 4, internal: rnd(18,29), external: rnd(40,68), grade: "A",  gradeClass: "g-a" },
+        { code: "CS403", name: "Operating Systems", credits: 3, internal: rnd(18,29), external: rnd(40,68), grade: "B",  gradeClass: "g-b" },
+        { code: "CS404", name: "Computer Networks", credits: 3, internal: rnd(18,29), external: rnd(40,68), grade: "A",  gradeClass: "g-a" },
+        { code: "CS405", name: "Software Engineering", credits: 3, internal: rnd(18,29), external: rnd(40,68), grade: "B+", gradeClass: "g-b" },
+        { code: "CS406", name: "Web Technologies Lab", credits: 2, internal: rnd(22,30), external: rnd(52,68), grade: "O",  gradeClass: "g-o" },
+      ]
+    };
+  }
+
+  function rnd(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+
+  function showResult(data) {
+    document.getElementById("emptyState").style.display = "none";
+    const rc = document.getElementById("resultContent");
+    rc.style.display = "block";
+
+    document.getElementById("studentName").textContent = data.name;
+    document.getElementById("studentEnroll").textContent = document.getElementById("rollInput").value.toUpperCase();
+    document.getElementById("studentBranch").textContent = data.branch;
+    document.getElementById("studentSem").textContent = data.year + " / " + data.sem;
+    document.getElementById("declaredOn").textContent = data.declared;
+    document.getElementById("overallGrade").textContent = data.grade;
+    document.getElementById("overallStatus").textContent = data.status;
+    document.getElementById("overallStatus").className = "overall-status " + (data.status === "PASS" ? "status-pass" : "status-fail");
+    document.getElementById("statSGPA").textContent = data.sgpa;
+    document.getElementById("statCGPA").textContent = data.cgpa;
+    document.getElementById("statPercent").textContent = data.percent;
+    document.getElementById("statRank").textContent = data.rank;
+
+    // Table
+    const tbody = document.getElementById("subjectTableBody");
+    tbody.innerHTML = "";
+    data.subjects.forEach(s => {
+      const total = s.internal + s.external;
+      const pct = total;
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><span class="subject-code">${s.code}</span></td>
+        <td><span class="subject-name">${s.name}</span></td>
+        <td style="text-align:center">${s.credits}</td>
+        <td>${s.internal}</td>
+        <td>${s.external}</td>
+        <td>
+          <div class="mark-bar-wrap">
+            <span>${total}</span>
+            <div class="mark-bar"><div class="mark-bar-fill animate-bar" style="width:${pct}%;background:${getBarColor(pct)}"></div></div>
+          </div>
+        </td>
+        <td style="text-align:center"><span class="grade-pill ${s.gradeClass}">${s.grade}</span></td>
+        <td style="text-align:center"><span class="${total >= 40 ? 'pass-tag' : 'fail-tag'}">${total >= 40 ? 'PASS' : 'FAIL'}</span></td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    // Bar chart
+    const barArea = document.getElementById("barChartArea");
+    barArea.innerHTML = "";
+    data.subjects.forEach(s => {
+      const total = s.internal + s.external;
+      const pct = total;
+      barArea.innerHTML += `
+        <div class="bar-row">
+          <div class="bar-label" title="${s.name}">${s.name.split(' ').slice(0,2).join(' ')}</div>
+          <div class="h-bar">
+            <div class="h-bar-fill animate-bar" style="width:${pct}%;background:${getBarColor(pct)}">${total}</div>
+          </div>
+        </div>
+      `;
+    });
+
+    // Donut chart
+    drawDonut(data.subjects);
+  }
+
+  function drawDonut(subjects) {
+    const canvas = document.getElementById("donutCanvas");
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, 260, 260);
+
+    const totals = subjects.map(s => s.internal + s.external);
+    const sum = totals.reduce((a, b) => a + b, 0);
+    const colors = ["#2d6a4f", "#c9993a", "#1e40af", "#5b21b6", "#8b3a2a", "#4a6580"];
+    const labels = subjects.map(s => s.code);
+
+    let start = -Math.PI / 2;
+    const cx = 130, cy = 120, r = 85, ir = 52;
+
+    totals.forEach((t, i) => {
+      const angle = (t / sum) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r, start, start + angle);
+      ctx.closePath();
+      ctx.fillStyle = colors[i % colors.length];
+      ctx.fill();
+
+      // label
+      const mid = start + angle / 2;
+      const lx = cx + (r + 16) * Math.cos(mid);
+      const ly = cy + (r + 16) * Math.sin(mid);
+      ctx.fillStyle = "#555";
+      ctx.font = "9px 'DM Mono', monospace";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(labels[i], lx, ly);
+
+      start += angle;
+    });
+
+    // Donut hole
+    ctx.beginPath();
+    ctx.arc(cx, cy, ir, 0, Math.PI * 2);
+    ctx.fillStyle = "#faf7f2";
+    ctx.fill();
+
+    // Center text
+    ctx.fillStyle = "#0d0d0d";
+    ctx.font = "bold 20px 'Playfair Display', serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(Math.round(totals.reduce((a,b)=>a+b,0)/totals.length), cx, cy - 6);
+    ctx.font = "8px 'DM Mono', monospace";
+    ctx.fillStyle = "#7a7060";
+    ctx.fillText("AVG MARKS", cx, cy + 14);
+
+    // Legend
+    ctx.font = "8px 'DM Mono', monospace";
+    subjects.forEach((s, i) => {
+      const lx = 16, ly = 248 - (subjects.length - 1 - i) * 0;
+      const row = 240 + i * 0;
+    });
+
+    // bottom legend
+    const legY = 226;
+    subjects.forEach((s, i) => {
+      const x = 16 + i * 40;
+      ctx.fillStyle = colors[i % colors.length];
+      ctx.fillRect(x, legY, 8, 8);
+      ctx.fillStyle = "#7a7060";
+      ctx.font = "7px 'DM Mono', monospace";
+      ctx.textAlign = "left";
+      ctx.fillText(s.code, x + 10, legY + 6);
+    });
+  }
+
+  // Auto-load on page open
+  window.onload = () => { fetchResult(); };
+</script>
+</body>
+</html>
